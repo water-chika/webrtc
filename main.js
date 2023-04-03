@@ -1,7 +1,10 @@
 'use strict';
 
+const urlInput = document.getElementById('serverUrl');
+const connectButton = document.getElementById('connectButton');
 const startButton = document.getElementById('startButton');
 const hangupButton = document.getElementById('hangupButton');
+startButton.disabled = true;
 hangupButton.disabled = true;
 
 const localVideo = document.getElementById('localVideo');
@@ -12,10 +15,10 @@ let localStream;
 
 function WebSocketBroadCastChannel(url) {
     this.socket = new WebSocket(url);
-    this.socket.onmessage = e=> {
+    this.socket.onmessage = e => {
         console.log(e);
         const msg = JSON.parse(e.data);
-        let message = {data : msg};
+        let message = { data: msg };
         this.onmessage(message);
     }
     this.postMessage = obj => {
@@ -23,52 +26,58 @@ function WebSocketBroadCastChannel(url) {
     }
 }
 
-const signaling = new WebSocketBroadCastChannel("wss://ttrss.soulsand.top:443");
-signaling.onmessage = e=> {
-    if (!localStream) {
-        console.log('not ready yet');
-        return;
-    }
-    switch (e.data.type) {
-        case 'offer':
-            handleOffer(e.data);
-            break;
+let signaling;
+
+connectButton.onclick = async () => {
+    signaling = new WebSocketBroadCastChannel(urlInput.value);
+    signaling.onmessage = e => {
+        if (!localStream) {
+            console.log('not ready yet');
+            return;
+        }
+        switch (e.data.type) {
+            case 'offer':
+                handleOffer(e.data);
+                break;
             case 'answer':
                 handleAnswer(e.data);
-        case 'candidate':
-            handleCandidate(e.data);
-            break;
-        case 'ready':
-            if (pc) {
-                console.log('already in call, ignoring');
-                return;
-            }
-            makeCall();
-            break;
-        case 'bye':
-            if (pc) {
-                hangup();
-            }
-            break;
-        default:
-            console.log('unhandled', e);
-            break;
-    }
-};
+            case 'candidate':
+                handleCandidate(e.data);
+                break;
+            case 'ready':
+                if (pc) {
+                    console.log('already in call, ignoring');
+                    return;
+                }
+                makeCall();
+                break;
+            case 'bye':
+                if (pc) {
+                    hangup();
+                }
+                break;
+            default:
+                console.log('unhandled', e);
+                break;
+        }
+    };
+    connectButton.disabled = true;
+    startButton.disabled = false;
+}
 
 startButton.onclick = async () => {
-    localStream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
     localVideo.srcObject = localStream;
 
     startButton.disabled = true;
     hangupButton.disabled = false;
 
-    signaling.postMessage({type: 'ready'});
+    signaling.postMessage({ type: 'ready' });
 };
 
 hangupButton.onclick = async () => {
     hangup();
-    signaling.postMessage({type: 'bye'});
+    signaling.postMessage({ type: 'bye' });
 };
 
 async function hangup() {
@@ -103,7 +112,7 @@ function createPeerConnection() {
 async function makeCall() {
     await createPeerConnection();
     const offer = await pc.createOffer();
-    signaling.postMessage({type: 'offer', sdp:offer.sdp});
+    signaling.postMessage({ type: 'offer', sdp: offer.sdp });
     await pc.setLocalDescription(offer);
 }
 
@@ -115,9 +124,9 @@ async function handleOffer(offer) {
     }
     await createPeerConnection();
     await pc.setRemoteDescription(offer);
-    
+
     const answer = await pc.createAnswer();
-    signaling.postMessage({type: 'answer', sdp: answer.sdp});
+    signaling.postMessage({ type: 'answer', sdp: answer.sdp });
     await pc.setLocalDescription(answer);
 }
 
