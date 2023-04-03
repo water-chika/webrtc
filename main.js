@@ -23,7 +23,7 @@ function WebSocketBroadCastChannel(url) {
     }
 }
 
-const signaling = new WebSocketBroadCastChannel("ws://43.136.136.91:8080");
+const signaling = new WebSocketBroadCastChannel("wss://ttrss.soulsand.top:443");
 signaling.onmessage = e=> {
     if (!localStream) {
         console.log('not ready yet');
