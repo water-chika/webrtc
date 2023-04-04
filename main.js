@@ -92,6 +92,12 @@ async function hangup() {
 };
 
 function createPeerConnection() {
+    const config = {
+        iceServers: [{
+            urls: "stun:server-0.water-chika.top", 
+            username: "test", 
+            credential: "somepassword"}]
+    };
     pc = new RTCPeerConnection();
     pc.onicecandidate = e => {
         const message = {
