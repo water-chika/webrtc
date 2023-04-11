@@ -4,6 +4,7 @@ const urlInput = document.getElementById('serverUrl');
 const connectButton = document.getElementById('connectButton');
 const startButton = document.getElementById('startButton');
 const hangupButton = document.getElementById('hangupButton');
+const reconnectButton = document.getElementById('reconnectButton');
 startButton.disabled = true;
 hangupButton.disabled = true;
 
@@ -51,6 +52,11 @@ connectButton.onclick = async () => {
                 }
                 makeCall();
                 break;
+            case 'reconnect':
+                pc.close();
+                pc = null;
+                makeCall();
+                break;
             case 'bye':
                 if (pc) {
                     hangup();
@@ -79,6 +85,12 @@ hangupButton.onclick = async () => {
     hangup();
     signaling.postMessage({ type: 'bye' });
 };
+
+reconnectButton.onclick = async () => {
+    pc.close();
+    pc = null;
+    signaling.postMessage({ type: 'reconnect'});
+}
 
 async function hangup() {
     if (pc) {
@@ -112,6 +124,16 @@ function createPeerConnection() {
         signaling.postMessage(message);
     };
     pc.ontrack = e => remoteVideo.srcObject = e.streams[0];
+    pc.oniceconnectionstatechange = e => {
+        console.log("iceconnectionstatechange:");
+        console.log(e.target.iceConnectionState);
+        if (e.target.iceConnectionState == "disconnected") {
+            console.log('test');
+            hangup();
+            signaling.postMessage({ type: 'bye'});
+            makeCall();
+        }
+    };
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 }
 
