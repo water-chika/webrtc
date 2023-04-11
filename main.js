@@ -5,6 +5,7 @@ const connectButton = document.getElementById('connectButton');
 const startButton = document.getElementById('startButton');
 const hangupButton = document.getElementById('hangupButton');
 const reconnectButton = document.getElementById('reconnectButton');
+const informText = document.getElementById('informText');
 startButton.disabled = true;
 hangupButton.disabled = true;
 
@@ -21,6 +22,10 @@ function WebSocketBroadCastChannel(url) {
         const msg = JSON.parse(e.data);
         let message = { data: msg };
         this.onmessage(message);
+    }
+    this.socket.onerror = e => {
+        console.log(e);
+        informText.textContent = "Signaling Server disconnected, try reconnecting";
     }
     this.postMessage = obj => {
         this.socket.send(JSON.stringify(obj));
@@ -87,8 +92,11 @@ hangupButton.onclick = async () => {
 };
 
 reconnectButton.onclick = async () => {
-    pc.close();
-    pc = null;
+    if (pc) {
+        pc.close();
+        pc = null;
+    }
+
     signaling.postMessage({ type: 'reconnect'});
 }
 
@@ -127,12 +135,6 @@ function createPeerConnection() {
     pc.oniceconnectionstatechange = e => {
         console.log("iceconnectionstatechange:");
         console.log(e.target.iceConnectionState);
-        if (e.target.iceConnectionState == "disconnected") {
-            console.log('test');
-            pc.close();
-            pc = null;
-            signaling.postMessage({type: 'reconnect'});
-        }
     };
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 }
