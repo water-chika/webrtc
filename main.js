@@ -129,9 +129,9 @@ function createPeerConnection() {
         console.log(e.target.iceConnectionState);
         if (e.target.iceConnectionState == "disconnected") {
             console.log('test');
-            hangup();
-            signaling.postMessage({ type: 'bye'});
-            makeCall();
+            pc.close();
+            pc = null;
+            signaling.postMessage({type: 'reconnect'});
         }
     };
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
