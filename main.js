@@ -94,11 +94,11 @@ async function hangup() {
 function createPeerConnection() {
     const config = {
         iceServers: [{
-            urls: "stun:server-0.water-chika.top", 
-            username: "test", 
+            urls: [ "stun:server-0.water-chika.top", "turn:server-0.water-chika.top"], 
+            username: "guest", 
             credential: "somepassword"}]
     };
-    pc = new RTCPeerConnection();
+    pc = new RTCPeerConnection(config);
     pc.onicecandidate = e => {
         const message = {
             type: 'candidate',
@@ -145,6 +145,7 @@ async function handleAnswer(answer) {
 }
 
 async function handleCandidate(candidate) {
+    console.log(candidate);
     if (!pc) {
         console.error('no peerconnection');
         return;
